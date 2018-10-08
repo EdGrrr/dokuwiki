@@ -60,37 +60,42 @@ function media_metasave($id,$auth,$data){
     $meta = new JpegMeta($src);
     $meta->_parseAll();
 
+    $metatext = metafileparse(mediafntometafn($src));
+    
     foreach($data as $key => $val){
         $val=trim($val);
         if(empty($val)){
-            $meta->deleteField($key);
+            unset($metatext[$key]);
         }else{
-            $meta->setField($key,$val);
+            $metatext[$key] = $val;
         }
     }
 
-    $old = @filemtime($src);
-    if(!file_exists(mediaFN($id, $old)) && file_exists($src)) {
-        // add old revision to the attic
-        media_saveOldRevision($id);
-    }
-    $filesize_old = filesize($src);
-    if($meta->save()){
-        if($conf['fperm']) chmod($src, $conf['fperm']);
-        @clearstatcache(true, $src);
-        $new = @filemtime($src);
-        $filesize_new = filesize($src);
-        $sizechange = $filesize_new - $filesize_old;
+    metafilewrite(mediafntometafn($src), $metatext);
+    return $id;
+    
+    // $old = @filemtime($src);
+    // if(!file_exists(mediaFN($id, $old)) && file_exists($src)) {
+    //     // add old revision to the attic
+    //     media_saveOldRevision($id);
+    // }
+    // $filesize_old = filesize($src);
+    // if($meta->save()){
+    //     if($conf['fperm']) chmod($src, $conf['fperm']);
+    //     @clearstatcache(true, $src);
+    //     $new = @filemtime($src);
+    //     $filesize_new = filesize($src);
+    //     $sizechange = $filesize_new - $filesize_old;
 
-        // add a log entry to the media changelog
-        addMediaLogEntry($new, $id, DOKU_CHANGE_TYPE_EDIT, $lang['media_meta_edited'], '', null, $sizechange);
+    //     // add a log entry to the media changelog
+    //     addMediaLogEntry($new, $id, DOKU_CHANGE_TYPE_EDIT, $lang['media_meta_edited'], '', null, $sizechange);
 
-        msg($lang['metasaveok'],1);
-        return $id;
-    }else{
-        msg($lang['metasaveerr'],-1);
-        return false;
-    }
+    //     msg($lang['metasaveok'],1);
+    //     return $id;
+    // }else{
+    //     msg($lang['metasaveerr'],-1);
+    //     return false;
+    // }
 }
 
 /**
@@ -741,10 +746,10 @@ function media_tabs_details($image, $selected_tab = ''){
                           'caption' => $lang['media_viewtab']);
 
     list(, $mime) = mimetype($image);
-    if ($mime == 'image/jpeg' && file_exists(mediaFN($image))) {
-        $tabs['edit'] = array('href'    => media_managerURL(array('tab_details' => 'edit'), '&'),
-                              'caption' => $lang['media_edittab']);
-    }
+    //if ($mime == 'image/jpeg' && file_exists(mediaFN($image))) {
+    $tabs['edit'] = array('href'    => media_managerURL(array('tab_details' => 'edit'), '&'),
+                          'caption' => $lang['media_edittab']);
+    //}
     if ($conf['mediarevisions']) {
         $tabs['history'] = array('href'    => media_managerURL(array('tab_details' => 'history'), '&'),
                                  'caption' => $lang['media_historytab']);
@@ -942,10 +947,11 @@ function media_tab_view($image, $ns, $auth=null, $rev='') {
 function media_tab_edit($image, $ns, $auth=null) {
     if(is_null($auth)) $auth = auth_quickaclcheck("$ns:*");
 
-    if ($image) {
-        list(, $mime) = mimetype($image);
-        if ($mime == 'image/jpeg') media_metaform($image,$auth);
-    }
+    media_metaform($image,$auth);
+    // if ($image) {
+    //     list(, $mime) = mimetype($image);
+    //     if ($mime == 'image/jpeg') media_metaform($image,$auth);
+    // }
 }
 
 /**

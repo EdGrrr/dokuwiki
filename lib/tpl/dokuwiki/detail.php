@@ -16,7 +16,7 @@ header('X-UA-Compatible: IE=edge,chrome=1');
 <head>
     <meta charset="utf-8" />
     <title>
-        <?php echo hsc(tpl_img_getTag('IPTC.Headline',$IMG))?>
+        <?php echo hsc(tpl_img_getTag('Text.Title', $IMG, mediaFN($IMG)))?>
         [<?php echo strip_tags($conf['title'])?>]
     </title>
     <script>(function(H){H.className=H.className.replace(/\bno-js\b/,'js')})(document.documentElement)</script>
@@ -38,7 +38,7 @@ header('X-UA-Compatible: IE=edge,chrome=1');
                 <?php html_msgarea() ?>
 
                 <?php if(!$ERROR): ?>
-                    <div class="pageId"><span><?php echo hsc(tpl_img_getTag('IPTC.Headline',$IMG)); ?></span></div>
+                    <div class="pageId"><span><?php echo hsc(tpl_img_getTag('Text.Title',$IMG)); ?></span></div>
                 <?php endif; ?>
 
                 <div class="page group">
@@ -50,7 +50,7 @@ header('X-UA-Compatible: IE=edge,chrome=1');
                         echo '<h1>'.$ERROR.'</h1>';
                     else: ?>
                         <?php if($REV) echo p_locale_xhtml('showrev');?>
-                        <h1><?php echo nl2br(hsc(tpl_img_getTag('simple.title'))); ?></h1>
+<h1><?php echo nl2br(hsc(tpl_img_getTag('Text.Title'))); ?></h1>
 
                         <?php tpl_img(900,700); /* parameters: maximum width, maximum height (and more) */ ?>
 
@@ -58,6 +58,9 @@ header('X-UA-Compatible: IE=edge,chrome=1');
                             <?php tpl_img_meta(); ?>
                             <dl>
                             <?php
+                        echo '<dt> Media ID:</dt><dd>'.$IMG.'</dd>';
+
+                        
                             echo '<dt>'.$lang['reference'].':</dt>';
                             $media_usage = ft_mediause($IMG,true);
                             if(count($media_usage) > 0){

@@ -1006,6 +1006,12 @@ function tpl_img_getTag($tags, $alt = '', $src = null) {
 
     if(is_null($src)) $src = $SRC;
 
+    //Check the text metadata first
+    $mdata = metafileparse(mediafntometafn($src));
+    //if (array_key_exists($tags[0], $mdata)) return $mdata[$tags[0]];
+    if (array_key_exists($tags[0], $mdata)) return cleanText($mdata[$tags[0]]);
+    //echo array_key_exists($tags[0], $mdata);
+    
     static $meta = null;
     if(is_null($meta)) $meta = new JpegMeta($src);
     if($meta === false) return $alt;
@@ -1021,6 +1027,8 @@ function tpl_img_getTag($tags, $alt = '', $src = null) {
  */
 function tpl_img_meta() {
     global $lang;
+    global $ID;
+    global $SRC;
 
     $tags = tpl_get_img_meta();
 
@@ -1029,16 +1037,49 @@ function tpl_img_meta() {
         $label = $lang[$tag['langkey']];
         if(!$label) $label = $tag['langkey'] . ':';
 
-        echo '<dt>'.$label.'</dt><dd>';
+        echo '<div style="clear:both"><dt>'.$label.'</dt><dd>';
         if ($tag['type'] == 'date') {
             echo dformat($tag['value']);
         } else {
             echo hsc($tag['value']);
         }
-        echo '</dd>';
+        echo '</dd></div>';
     }
     echo '</dl>';
 }
+
+function mediafntometafn($fname) {
+    global $conf;
+    if (substr($fname, 0, strlen($conf['mediadir'])) == $conf['mediadir']) {
+        $fname = substr($fname, strlen($conf['mediadir']));
+    }
+    $metafn = $conf['mediametadir'].'/'.$fname.'.meta';
+    return $metafn;
+}
+
+function metafileparse($fname) {
+    $tags = array();
+    $lines = file($fname);
+
+    foreach ($lines as $i => $line) {
+        $line_arr = explode("|", $line);
+        $tags[$line_arr[0]] = $line_arr[1];
+    }
+
+    return $tags;
+}
+
+function metafilewrite($fname, $tags) {
+    $text = '';
+    foreach($tags as $key => $value)
+    {
+        $text .= $key."|".$value."\n";
+    }
+    $fh = fopen($fname, "w") or die("Could not open log file.");
+    fwrite($fh, $text) or die("Could not write file!");
+    fclose($fh);
+}
+
 
 /**
  * Returns metadata as configured in mediameta config file, ready for creating html
@@ -1432,9 +1473,9 @@ function tpl_mediaFileDetails($image, $rev) {
 
     $tab_array = array('view');
     list(, $mime) = mimetype($image);
-    if($mime == 'image/jpeg') {
-        $tab_array[] = 'edit';
-    }
+    //if($mime == 'image/jpeg') {
+    $tab_array[] = 'edit';
+    //}
     if($conf['mediarevisions']) {
         $tab_array[] = 'history';
     }
@@ -1450,7 +1491,7 @@ function tpl_mediaFileDetails($image, $rev) {
     $class    = preg_replace('/[^_\-a-z0-9]+/i', '_', $ext);
     $class    = 'select mediafile mf_'.$class;
     $attributes = $rev ? ['rev' => $rev] : [];
-    $tabTitle = '<strong><a href="'.ml($image, $attributes).'" class="'.$class.'" title="'.$lang['mediaview'].'">'.$image.'</a>'.'</strong>';
+    $tabTitle = '<strong><a href="'.ml($image, $attributes, false).'" class="'.$class.'" title="'.$lang['mediaview'].'">'.$image.'</a>'.'</strong>';
     if($opened_tab === 'view' && $rev) {
         printf($lang['media_viewold'], $tabTitle, dformat($rev));
     } else {
